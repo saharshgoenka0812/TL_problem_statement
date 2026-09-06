@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maze Challenge — Scoring Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #eef2f8;
+    --grid: rgba(27,42,74,0.05);
+    --paper: #ffffff;
+    --ink: #172444;
+    --ink-soft: #56607c;
+    --line: #d7deea;
+    --teal: #0f8f7f;
+    --teal-soft: #e3f4f1;
+    --amber: #c98a1e;
+    --amber-soft: #fbf1de;
+    --red: #b6402c;
+    --red-soft: #fbe9e5;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 28px 28px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 28px 28px,
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    padding: 28px 20px 60px;
+    min-height: 100vh;
+  }
+
+  .wrap{ max-width: 1080px; margin: 0 auto; }
+
+  header.page{ margin-bottom: 24px; }
+  header.page h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  header.page p{
+    margin:0;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    max-width: 620px;
+  }
+
+  .grid-2{
+    display:grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 860px){
+    .grid-2{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 22px 24px;
+  }
+
+  .panel h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 16.5px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel h2 .dot{
+    width:8px; height:8px; border-radius:50%; background: var(--teal); display:inline-block;
+  }
+
+  label.field{ display:block; margin-bottom: 14px; }
+  label.field span.lbl{
+    display:block; font-size: 13px; color: var(--ink-soft); margin-bottom: 5px; font-weight:500;
+  }
+  input[type=text], input[type=number], select{
+    width:100%;
+    padding: 9px 10px;
+    border:1px solid var(--line);
+    border-radius: 7px;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    color: var(--ink);
+    background: #fbfcfe;
+  }
+  input:focus, select:focus{ outline:2px solid var(--teal); outline-offset:0; border-color: var(--teal); }
+  input[disabled]{ background:#f2f4f7; color:#9aa3b5; }
+
+  .row-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items:end; }
+
+  .checkline{
+    display:flex; align-items:center; gap:9px; padding: 10px 12px;
+    border:1px solid var(--line); border-radius:7px; margin-bottom:10px; background:#fbfcfe;
+  }
+  .checkline input{ width:16px; height:16px; margin:0; }
+  .checkline .txt{ font-size: 13.5px; }
+  .checkline .txt b{ display:block; font-size:13.5px; }
+  .checkline .txt small{ color: var(--ink-soft); font-size:12px; }
+
+  button.primary{
+    width:100%;
+    background: var(--ink);
+    color:#fff;
+    border:none;
+    padding: 12px 16px;
+    border-radius: 7px;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size: 14.5px;
+    cursor:pointer;
+    margin-top: 4px;
+  }
+  button.primary:hover{ background:#0e1834; }
+  button.ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-soft);
+    padding: 7px 12px; border-radius:6px; font-size:12.5px; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  button.ghost:hover{ border-color:#b6bfd1; color:var(--ink); }
+  button.danger-link{
+    background:none; border:none; color: var(--red); font-size:12px; cursor:pointer; padding:2px 4px;
+    font-family:'Inter', sans-serif; text-decoration:underline;
+  }
+
+  .notice{ font-size:12px; color: var(--ink-soft); margin-top:10px; line-height:1.5; }
+
+  /* Receipt */
+  .receipt{ font-family:'IBM Plex Mono', monospace; font-size: 13px; }
+  .receipt .line{
+    display:flex; justify-content:space-between; gap:10px;
+    padding: 6px 0; border-bottom: 1px dashed var(--line);
+  }
+  .receipt .line span:first-child{ color: var(--ink-soft); }
+  .receipt .line span:last-child{ font-weight:600; }
+  .receipt .line.neg span:last-child{ color: var(--red); }
+  .receipt .line.pos span:last-child{ color: var(--teal); }
+  .receipt .line.mult span:last-child{ color: var(--amber); }
+  .receipt .final{
+    margin-top: 14px;
+    background: var(--ink);
+    color:#fff;
+    border-radius:8px;
+    padding: 16px 18px;
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .receipt .final .num{ font-size: 30px; font-weight:700; font-family:'Space Grotesk', sans-serif; }
+  .receipt .final .lbl{ font-size:13px; color:#c3cbe0; letter-spacing:0.02em; }
+
+  .badge{
+    display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; font-family:'Inter',sans-serif; font-weight:600;
+  }
+  .badge.x2{ background: var(--amber-soft); color: var(--amber); }
+
+  section.block{ margin-top: 22px; }
+
+  table{ width:100%; border-collapse: collapse; font-size: 13px; }
+  thead th{
+    text-align:left; font-weight:600; color: var(--ink-soft); font-size:12px;
+    padding: 8px 10px; border-bottom: 1px solid var(--line);
+  }
+  tbody td{ padding: 9px 10px; border-bottom: 1px solid #eef1f6; vertical-align:middle; }
+  tbody tr:hover{ background:#f8fafc; }
+  td.num, th.num{ font-family:'IBM Plex Mono', monospace; text-align:right; }
+  td.final-cell{ font-weight:700; font-family:'IBM Plex Mono', monospace; }
+
+  .rank{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:50%; background: var(--teal-soft); color: var(--teal);
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:12px;
+  }
+  .rank.r1{ background:var(--amber-soft); color:var(--amber); }
+
+  .empty{ color: var(--ink-soft); font-size:13.5px; padding: 18px 0; text-align:center; }
+
+  .toprow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+
+  details.rules{ font-size:13.5px; }
+  details.rules summary{ cursor:pointer; font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px; padding: 2px 0; }
+  details.rules .rulesbody{ margin-top:14px; line-height:1.7; color: var(--ink-soft); }
+  details.rules .rulesbody b{ color: var(--ink); }
+
+  /* modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(23,36,68,0.45); display:none;
+    align-items:center; justify-content:center; z-index:50;
+  }
+  .overlay.show{ display:flex; }
+  .modal{
+    background:#fff; border-radius:10px; padding:22px 24px; max-width:340px; width:90%;
+  }
+  .modal p{ font-size:14px; color:var(--ink-soft); margin: 6px 0 18px; }
+  .modal h3{ margin:0; font-family:'Space Grotesk',sans-serif; font-size:16px; }
+  .modal .actions{ display:flex; gap:10px; justify-content:flex-end; }
+
+  .warn{
+    background: var(--amber-soft); color:#8a5c11; border:1px solid #f0dbaa;
+    padding:8px 10px; border-radius:6px; font-size:12.5px; margin: 4px 0 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <h1>Maze Challenge — Scoring Calculator</h1>
+    <p>Enter one attempt, get a full score breakdown, and save it to the shared attempt history and leaderboard for everyone running this event.</p>
+  </header>
+
+  <div class="grid-2">
+
+    <!-- FORM -->
+    <div class="panel">
+      <h2><span class="dot"></span> New attempt</h2>
+
+      <label class="field">
+        <span class="lbl">Team / bot name</span>
+        <input type="text" id="teamName" placeholder="e.g. Team Vector" />
+      </label>
+
+      <div class="row-2">
+        <label class="field">
+          <span class="lbl">Attempt number</span>
+          <select id="attemptNum">
+            <option value="1">1st attempt</option>
+            <option value="2">2nd attempt</option>
+            <option value="3">3rd attempt (75%)</option>
+            <option value="4">4th attempt (50%)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="lbl">Wall collisions</span>
+          <input type="number" id="collisions" min="0" step="1" value="0" />
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="lbl">Furthest point reached</span>
+        <select id="checkpoint">
+          <option value="none">Did not reach the solid line</option>
+          <option value="solid">Reached the solid centre line (10 pts)</option>
+          <option value="dashed">Reached the dashed line (25 pts)</option>
+          <option value="exit">Completed the maze — reached exit (50 pts)</option>
+        </select>
+      </label>
+
+      <div class="row-2" id="timeRow">
+        <label class="field">
+          <span class="lbl">Completion time — minutes</span>
+          <input type="number" id="timeMin" min="0" step="1" value="0" disabled />
+        </label>
+        <label class="field">
+          <span class="lbl">Completion time — seconds</span>
+          <input type="number" id="timeSec" min="0" max="59" step="1" value="0" disabled />
+        </label>
+      </div>
+
+      <div class="checkline">
+        <input type="checkbox" id="sticker" />
+        <div class="txt"><b>TL sticker attached</b><small>Flat +10 bonus</small></div>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="ultrasonic" />
+        <div class="txt"><b>Completed using ultrasonic-only navigation</b><small>No IR used for navigation — doubles the final score</small></div>
+      </div>
+
+      <label class="field">
+        <span class="lbl">Notes (optional)</span>
+        <input type="text" id="notes" placeholder="Judge notes, run conditions, etc." />
+      </label>
+
+      <div id="attemptWarn"></div>
+
+      <button class="primary" id="saveBtn">Save attempt to history</button>
+      <p class="notice">Saved attempts are visible to everyone using this calculator for the event — treat this like a shared scoreboard.</p>
+    </div>
+
+    <!-- BREAKDOWN -->
+    <div class="panel">
+      <h2><span class="dot" style="background:var(--amber)"></span> Score breakdown</h2>
+      <div class="receipt" id="receipt"></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <section class="block panel">
+    <div class="toprow">
+      <h2 style="margin:0"><span class="dot" style="background:var(--teal)"></span> Leaderboard — best attempt per team</h2>
+    </div>
+    <div id="leaderboardWrap"><div class="empty">No attempts saved yet.</div></div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="block panel">
+    <div class="toprow">
+      <h2 style="margin:0"><span class="dot" style="background:var(--ink)"></span> Full attempt history</h2>
+      <div style="display:flex; gap:8px;">
+        <button class="ghost" id="exportBtn">Export CSV</button>
+        <button class="ghost" id="resetBtn">Reset all data</button>
+      </div>
+    </div>
+    <div id="historyWrap"><div class="empty">No attempts saved yet.</div></div>
+  </section>
+
+  <!-- RULES -->
+  <section class="block panel">
+    <details class="rules">
+      <summary>Scoring rules reference</summary>
+      <div class="rulesbody">
+        <b>Maze completion (50 pts, cumulative):</b> 10 pts at the solid line, +15 at the dashed line, +25 at the exit.<br/>
+        <b>Wall collisions:</b> −2 pts each, subtracted from the maze completion points.<br/>
+        <b>Time score (50 pts, only if the maze is completed):</b> ≤1 min = 50, ≤2 min = 40, ≤3 min = 30, ≤4 min = 20, ≤5 min = 10, over 5 min = 0.<br/>
+        <b>Attempt penalty:</b> attempts 1–2 score at 100%, attempt 3 at 75%, attempt 4 at 50% — applied to the maze + time subtotal.<br/>
+        <b>TL sticker bonus:</b> flat +10, added after the attempt penalty.<br/>
+        <b>Ultrasonic-only challenge:</b> if navigation is done entirely without IR, the final score (including the sticker bonus) is doubled.<br/>
+        <span style="display:block; margin-top:10px; font-size:12px;">This calculator applies the multiplier order above. If your event scores attempts in a different order, treat the line items in the breakdown as a reference and adjust manually.</span>
+      </div>
+    </details>
+  </section>
+
+</div>
+
+<!-- confirm modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Are you sure?</h3>
+    <p id="modalBody"></p>
+    <div class="actions">
+      <button class="ghost" id="modalCancel">Cancel</button>
+      <button class="primary" style="width:auto; background:var(--red);" id="modalConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CHECKPOINTS = {
+  none:   { label: 'Not past entry', points: 0 },
+  solid:  { label: 'Solid centre line', points: 10 },
+  dashed: { label: 'Dashed line', points: 25 },
+  exit:   { label: 'Exit (maze complete)', points: 50 },
+};
+
+function timeScoreFor(minutes){
+  if (minutes <= 1) return 50;
+  if (minutes <= 2) return 40;
+  if (minutes <= 3) return 30;
+  if (minutes <= 4) return 20;
+  if (minutes <= 5) return 10;
+  return 0;
+}
+
+function round2(n){ return Math.round(n*100)/100; }
+
+function computeBreakdown(rec){
+  const checkpointPoints = CHECKPOINTS[rec.checkpoint].points;
+  const collisionPenalty = rec.collisions * 2;
+  const mazeScore = Math.max(0, checkpointPoints - collisionPenalty);
+
+  let timeMinutes = null, timeScore = 0;
+  if (rec.checkpoint === 'exit'){
+    timeMinutes = rec.timeMin + rec.timeSec/60;
+    timeScore = timeScoreFor(timeMinutes);
+  }
+
+  const subtotal = mazeScore + timeScore;
+  const multiplier = rec.attempt === 3 ? 0.75 : rec.attempt === 4 ? 0.5 : 1;
+  const afterMultiplier = subtotal * multiplier;
+  const stickerBonus = rec.sticker ? 10 : 0;
+  const beforeUltrasonic = afterMultiplier + stickerBonus;
+  const ultrasonicMultiplier = rec.ultrasonic ? 2 : 1;
+  const final = round2(beforeUltrasonic * ultrasonicMultiplier);
+
+  return { checkpointPoints, collisionPenalty, mazeScore, timeMinutes, timeScore, subtotal,
+           multiplier, afterMultiplier, stickerBonus, beforeUltrasonic, ultrasonicMultiplier, final };
+}
+
+function readForm(){
+  return {
+    team: document.getElementById('teamName').value.trim(),
+    attempt: parseInt(document.getElementById('attemptNum').value, 10),
+    collisions: Math.max(0, parseInt(document.getElementById('collisions').value || '0', 10)),
+    checkpoint: document.getElementById('checkpoint').value,
+    timeMin: Math.max(0, parseInt(document.getElementById('timeMin').value || '0', 10)),
+    timeSec: Math.max(0, Math.min(59, parseInt(document.getElementById('timeSec').value || '0', 10))),
+    sticker: document.getElementById('sticker').checked,
+    ultrasonic: document.getElementById('ultrasonic').checked,
+    notes: document.getElementById('notes').value.trim(),
+  };
+}
+
+function renderReceipt(){
+  const rec = readForm();
+  const b = computeBreakdown(rec);
+  const el = document.getElementById('receipt');
+
+  const rows = [
+    ['Checkpoint reached', CHECKPOINTS[rec.checkpoint].label],
+    ['Checkpoint points', '+' + b.checkpointPoints, 'pos'],
+    ['Wall collisions (' + rec.collisions + ')', '−' + b.collisionPenalty, b.collisionPenalty ? 'neg' : ''],
+    ['Maze score', b.mazeScore],
+    ['Time score', b.timeMinutes === null ? '— (maze not completed)' : (b.timeScore + '  (' + round2(b.timeMinutes) + ' min)')],
+    ['Subtotal', round2(b.subtotal)],
+    ['Attempt ' + rec.attempt + ' multiplier', '×' + b.multiplier, 'mult'],
+    ['Score after multiplier', round2(b.afterMultiplier)],
+    ['TL sticker bonus', b.stickerBonus ? '+' + b.stickerBonus : '+0', b.stickerBonus ? 'pos' : ''],
+    ['Score before ultrasonic bonus', round2(b.beforeUltrasonic)],
+    ['Ultrasonic-only multiplier', '×' + b.ultrasonicMultiplier, b.ultrasonicMultiplier === 2 ? 'mult' : ''],
+  ];
+
+  el.innerHTML = rows.map(r =>
+    `<div class="line ${r[2]||''}"><span>${r[0]}</span><span>${r[1]}</span></div>`
+  ).join('') + `
+    <div class="final">
+      <span class="lbl">Final score${rec.ultrasonic ? ' <span class="badge x2">×2 ultrasonic</span>' : ''}</span>
+      <span class="num">${b.final}</span>
+    </div>`;
+
+  return { rec, b };
+}
+
+function toggleTimeInputs(){
+  const isExit = document.getElementById('checkpoint').value === 'exit';
+  document.getElementById('timeMin').disabled = !isExit;
+  document.getElementById('timeSec').disabled = !isExit;
+}
+
+['teamName','attemptNum','collisions','checkpoint','timeMin','timeSec','sticker','ultrasonic']
+  .forEach(id => {
+    document.getElementById(id).addEventListener('input', () => { toggleTimeInputs(); renderReceipt(); checkAttemptWarning(); });
+    document.getElementById(id).addEventListener('change', () => { toggleTimeInputs(); renderReceipt(); checkAttemptWarning(); });
+  });
+
+/* ---------- storage ---------- */
+
+async function loadHistory(){
+  try{
+    const res = await window.storage.get('history', true);
+    return res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    return [];
+  }
+}
+
+async function saveHistory(list){
+  try{
+    const res = await window.storage.set('history', JSON.stringify(list), true);
+    return !!res;
+  }catch(e){
+    return false;
+  }
+}
+
+let cachedHistory = [];
+
+function teamKey(name){ return name.trim().toLowerCase(); }
+
+function checkAttemptWarning(){
+  const rec = readForm();
+  const warnEl = document.getElementById('attemptWarn');
+  if (!rec.team){ warnEl.innerHTML = ''; return; }
+  const teamRecords = cachedHistory.filter(r => teamKey(r.team) === teamKey(rec.team));
+  const sameAttempt = teamRecords.find(r => r.attempt === rec.attempt);
+  let msg = '';
+  if (sameAttempt){
+    msg = `Attempt ${rec.attempt} for "${rec.team}" is already logged (score ${sameAttempt.final}). Saving will add a second entry — delete the old one below if this is a correction.`;
+  } else if (teamRecords.length >= 4){
+    msg = `"${rec.team}" already has ${teamRecords.length} attempts logged (max is 4).`;
+  }
+  warnEl.innerHTML = msg ? `<div class="warn">${msg}</div>` : '';
+}
+
+function renderLeaderboard(){
+  const wrap = document.getElementById('leaderboardWrap');
+  if (!cachedHistory.length){ wrap.innerHTML = '<div class="empty">No attempts saved yet.</div>'; return; }
+
+  const byTeam = {};
+  cachedHistory.forEach(r => {
+    const k = teamKey(r.team);
+    if (!byTeam[k] || r.final > byTeam[k].final) byTeam[k] = r;
+  });
+  const ranked = Object.values(byTeam).sort((a,b) => b.final - a.final);
+
+  let html = `<table><thead><tr>
+    <th></th><th>Team</th><th>Best attempt</th><th class="num">Best score</th>
+  </tr></thead><tbody>`;
+  ranked.forEach((r, i) => {
+    html += `<tr>
+      <td><span class="rank ${i===0?'r1':''}">${i+1}</span></td>
+      <td>${escapeHtml(r.team)}</td>
+      <td>Attempt ${r.attempt}${r.ultrasonic ? ' · ultrasonic ×2' : ''}${r.sticker ? ' · +sticker' : ''}</td>
+      <td class="num final-cell">${r.final}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderHistory(){
+  const wrap = document.getElementById('historyWrap');
+  if (!cachedHistory.length){ wrap.innerHTML = '<div class="empty">No attempts saved yet.</div>'; return; }
+
+  const sorted = [...cachedHistory].sort((a,b) => b.ts - a.ts);
+  let html = `<table><thead><tr>
+    <th>Team</th><th>Attempt</th><th>Checkpoint</th><th class="num">Collisions</th>
+    <th class="num">Time</th><th>Sticker</th><th>Ultrasonic</th><th class="num">Final</th><th></th>
+  </tr></thead><tbody>`;
+  sorted.forEach(r => {
+    html += `<tr>
+      <td>${escapeHtml(r.team)}</td>
+      <td>${r.attempt}</td>
+      <td>${CHECKPOINTS[r.checkpoint].label}</td>
+      <td class="num">${r.collisions}</td>
+      <td class="num">${r.checkpoint === 'exit' ? round2(r.timeMin + r.timeSec/60) + ' min' : '—'}</td>
+      <td>${r.sticker ? 'Yes' : '—'}</td>
+      <td>${r.ultrasonic ? 'Yes ×2' : '—'}</td>
+      <td class="num final-cell">${r.final}</td>
+      <td><button class="danger-link" data-id="${r.id}">Delete</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => confirmModal(
+      'Delete this attempt?',
+      'This removes it from the shared history and leaderboard for everyone.',
+      async () => {
+        cachedHistory = cachedHistory.filter(r => r.id !== btn.dataset.id);
+        await saveHistory(cachedHistory);
+        renderLeaderboard(); renderHistory();
+      }
+    ));
+  });
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- modal ---------- */
+function confirmModal(title, body, onConfirm){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  const overlay = document.getElementById('overlay');
+  overlay.classList.add('show');
+  const confirmBtn = document.getElementById('modalConfirm');
+  const cancelBtn = document.getElementById('modalCancel');
+  function cleanup(){ overlay.classList.remove('show'); confirmBtn.onclick=null; cancelBtn.onclick=null; }
+  confirmBtn.onclick = () => { cleanup(); onConfirm(); };
+  cancelBtn.onclick = () => cleanup();
+}
+
+/* ---------- save / export / reset ---------- */
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const { rec, b } = renderReceipt();
+  if (!rec.team){
+    document.getElementById('attemptWarn').innerHTML = '<div class="warn">Enter a team name before saving.</div>';
+    return;
+  }
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  cachedHistory = await loadHistory(); // refresh before writing to reduce overwrite risk
+  cachedHistory.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,8),
+    ts: Date.now(),
+    team: rec.team,
+    attempt: rec.attempt,
+    checkpoint: rec.checkpoint,
+    collisions: rec.collisions,
+    timeMin: rec.timeMin,
+    timeSec: rec.timeSec,
+    sticker: rec.sticker,
+    ultrasonic: rec.ultrasonic,
+    notes: rec.notes,
+    final: b.final,
+  });
+  const ok = await saveHistory(cachedHistory);
+  btn.disabled = false; btn.textContent = 'Save attempt to history';
+  if (!ok){
+    document.getElementById('attemptWarn').innerHTML = '<div class="warn">Could not save — check your connection and try again.</div>';
+    return;
+  }
+  renderLeaderboard(); renderHistory(); checkAttemptWarning();
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const headers = ['team','attempt','checkpoint','collisions','time_minutes','sticker','ultrasonic','final_score','notes','saved_at'];
+  const lines = [headers.join(',')];
+  [...cachedHistory].sort((a,b)=>a.ts-b.ts).forEach(r => {
+    const time = r.checkpoint === 'exit' ? round2(r.timeMin + r.timeSec/60) : '';
+    const row = [r.team, r.attempt, r.checkpoint, r.collisions, time, r.sticker?'Y':'N', r.ultrasonic?'Y':'N', r.final, (r.notes||'').replace(/,/g,';'), new Date(r.ts).toISOString()];
+    lines.push(row.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'maze-challenge-history.csv';
+  a.click();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  confirmModal(
+    'Reset all history?',
+    'This permanently clears every saved attempt for every team. This cannot be undone.',
+    () => confirmModal(
+      'This really cannot be undone.',
+      'Confirm again to permanently erase the shared history.',
+      async () => {
+        cachedHistory = [];
+        await saveHistory(cachedHistory);
+        renderLeaderboard(); renderHistory();
+      }
+    )
+  );
+});
+
+/* ---------- init ---------- */
+(async function init(){
+  toggleTimeInputs();
+  renderReceipt();
+  document.getElementById('historyWrap').innerHTML = '<div class="empty">Loading history…</div>';
+  cachedHistory = await loadHistory();
+  renderLeaderboard();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
